@@ -1,0 +1,7 @@
+- name: Postgres Backup and Restore
+- hosts:
+    - source_instance
+    - destination_instance
+  become: true
+  roles:
+    - backup_restore
