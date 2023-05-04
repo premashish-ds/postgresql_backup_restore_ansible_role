@@ -1,0 +1,6 @@
+---
+- name: Restart PostgreSQL
+  service:
+    name: postgresql
+    state: restarted
+  when: inventory_hostname == 'destination_instance'
