@@ -8,7 +8,7 @@ pipeline {
                 checkout scmGit(
                     branches: [[name: 'refs/heads/main']],
                     extensions: [],
-                    userRemoteConfigs: [[url: 'https://github.com/premashish-ds/AnsibleRepo.git']]
+                    userRemoteConfigs: [[url: 'https://github.com/premashish-ds/postgresql_backup_restore_ansible_role.git']]
                 )
             }
         }
