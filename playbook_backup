@@ -41,11 +41,18 @@
       when: inventory_hostname == 'destination_instance'
 
     - name: Copy PostgreSQL backup file to destination instance
+      become: yes
       copy:
         src: "{{ pg_backup_dir }}/{{ pg_backup_file }}"
         dest: "{{ pg_backup_dir }}/"
         remote_src: yes
-          #delegate_to: destination_instance
+      register: pg_copy_result
+      delegate_to: node2@198.168.0.104
+
+    - name: Display PostgreSQL copy result
+      debug:
+        var: pg_copy_result
+      when: inventory_hostname == 'destination_instance'
 
         #    - name: Copy PostgreSQL backup file to destination instance
         #      copy:
