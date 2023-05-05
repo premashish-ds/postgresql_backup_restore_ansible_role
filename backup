@@ -4,28 +4,20 @@
     - destination_instance
 
   vars:
-    pg_username: node1
-    pg_password: node1
-    node1_user: node1
+    pg_username: postgres
+    pg_password: postgres
     pg_source_db: source_pg_db
     pg_backup_dir: /tmp/backup
-      # pg_backup_file: backup_file-{{ ansible_date_time.date }}-{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}
     pg_backup_file: "{{ 'backup_file-' ~ ansible_date_time.date ~ '-' ~ ansible_date_time.hour ~ ansible_date_time.minute ~ '.gz' }}"
     pg_dest_db: destination_pg_db
 
   tasks:
-    - name: Create backup directory
+    - name: Create backup directory in source
       file:
         path: "{{ pg_backup_dir }}"
         state: directory
-          #mode: '0777'
-
-    - name: Set permissions on backup file
-      file:
-        path: "{{ pg_backup_dir }}"
-        owner: "{{node1_user}}"
-        group: "{{node1_user}}"
           # mode: '0777'
+      when: inventory_hostname == 'source_instance'
 
     - name: Take PostgreSQL backup from source instance
       shell: "pg_dump -U {{ pg_username }} -h {{ ansible_host }} {{ pg_source_db }} | gzip > {{pg_backup_dir}}/{{ pg_backup_file }}"
@@ -35,9 +27,50 @@
     - name: Set permissions on backup file
       file:
         path: "{{pg_backup_dir}}/{{ pg_backup_file }}"
-        owner: "{{ pg_username }}"
-        group: "{{ pg_username }}"
-          # mode: '0644'
+          #owner: "{{ pg_username }}"
+          #group: "{{ pg_username }}"
+          # mode: '0777'
       register: pg_permission_result
       when: inventory_hostname == 'source_instance'
 
+    - name: Create backup directory in destination
+      file:
+        path: "{{ pg_backup_dir }}"
+        state: directory
+          # mode: '0777'
+      when: inventory_hostname == 'destination_instance'
+
+    - name: Copy PostgreSQL backup file to destination instance
+      copy:
+        src: "{{ pg_backup_dir }}/{{ pg_backup_file }}"
+        dest: "{{ pg_backup_dir }}/"
+        remote_src: yes
+          #delegate_to: destination_instance
+
+        #    - name: Copy PostgreSQL backup file to destination instance
+        #      copy:
+        #        src: "{{ pg_backup_dir }}/{{ pg_backup_file }}"
+        #        dest: "{{ pg_backup_dir }}/"
+        #        remote_src: yes
+        #      register: pg_copy_result
+        #      when: inventory_hostname == 'destination_instance'
+        #      delegate_to: destination_instance
+
+    - name: Install psql on destination instance
+      apt:
+        name: postgresql-client
+        state: present
+      register: psql_install_result
+      when: inventory_hostname == 'destination_instance'
+
+    - name: Restore PostgreSQL backup to destination instance
+      shell: "gunzip -c {{pg_backup_dir}}/{{ pg_backup_file }} | psql -U {{ pg_username }} -h {{ ansible_host }} -d {{ pg_dest_db }}"
+      when: inventory_hostname == 'destination_instance'
+      register: pg_restore_result
+      vars:
+        restore_file: "{{pg_backup_dir}}/{{ pg_backup_file }}"
+
+    - name: Display PostgreSQL restore result
+      debug:
+        var: pg_restore_result
+      when: inventory_hostname == 'destination_instance'
