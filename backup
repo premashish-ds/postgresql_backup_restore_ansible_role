@@ -1,0 +1,43 @@
+---
+- hosts:
+    - source_instance
+    - destination_instance
+
+  vars:
+    pg_username: node1
+    pg_password: node1
+    node1_user: node1
+    pg_source_db: source_pg_db
+    pg_backup_dir: /tmp/backup
+      # pg_backup_file: backup_file-{{ ansible_date_time.date }}-{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}
+    pg_backup_file: "{{ 'backup_file-' ~ ansible_date_time.date ~ '-' ~ ansible_date_time.hour ~ ansible_date_time.minute ~ '.gz' }}"
+    pg_dest_db: destination_pg_db
+
+  tasks:
+    - name: Create backup directory
+      file:
+        path: "{{ pg_backup_dir }}"
+        state: directory
+          #mode: '0777'
+
+    - name: Set permissions on backup file
+      file:
+        path: "{{ pg_backup_dir }}"
+        owner: "{{node1_user}}"
+        group: "{{node1_user}}"
+          # mode: '0777'
+
+    - name: Take PostgreSQL backup from source instance
+      shell: "pg_dump -U {{ pg_username }} -h {{ ansible_host }} {{ pg_source_db }} | gzip > {{pg_backup_dir}}/{{ pg_backup_file }}"
+      register: pg_backup_result
+      when: inventory_hostname == 'source_instance'
+
+    - name: Set permissions on backup file
+      file:
+        path: "{{pg_backup_dir}}/{{ pg_backup_file }}"
+        owner: "{{ pg_username }}"
+        group: "{{ pg_username }}"
+          # mode: '0644'
+      register: pg_permission_result
+      when: inventory_hostname == 'source_instance'
+
