@@ -1,0 +1,49 @@
+---
+- name: Backup Postgres and Restore in Another Node
+  hosts: node1
+  vars:
+    backup_dir: /tmp/postgres_backup
+    db_name: mydb
+    db_user: myuser
+
+  tasks:
+    - name: Create backup directory
+      become: true
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+
+    - name: Take Postgres backup
+      become: true
+      postgresql_dump:
+        db: "{{ db_name }}"
+        user: "{{ db_user }}"
+        dest: "{{ backup_dir }}/postgres_backup.sql"
+
+    - name: Copy backup to node2
+      become: true
+      copy:
+        src: "{{ backup_dir }}/postgres_backup.sql"
+        dest: "{{ backup_dir }}/postgres_backup.sql"
+      delegate_to: "{{ groups['node2'][0] }}"
+
+  hosts: node2
+  vars:
+    backup_dir: /tmp/postgres_backup
+    db_name: mydb
+    db_user: myuser
+
+  tasks:
+    - name: Create backup directory
+      become: true
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+
+    - name: Restore Postgres on node2
+      become: true
+      postgresql_db:
+        name: "{{ db_name }}"
+        user: "{{ db_user }}"
+        state: import
+        target: "{{ backup_dir }}/postgres_backup.sql"
