@@ -1,40 +1,53 @@
 ---
-- name: Take PostgreSQL backup from source instance
-  shell: "pg_dump -U {{ pg_username }} -h {{ ansible_host }} {{ pg_source_db }} | gzip > {{pg_backup_dir}}/{{ pg_backup_file }}"
-  register: pg_backup_result
-  when: inventory_hostname == 'source_instance'
-
-- name: Set permissions on backup file
+- name: Create backup folder in node1 and node2
   file:
-    path: "{{pg_backup_dir}}/{{ pg_backup_file }}"
-    owner: "{{ pg_username }}"
-    group: "{{ pg_username }}"
-    mode: '0644'
-  register: pg_permission_result
-  when: inventory_hostname == 'source_instance'
+    path: "{{ backup_dir }}"
+    state: directory
+  when: inventory_hostname in groups['node1'] + groups['node2']
+  register: pg_dir_result
 
-- name: Install psql on destination instance
-  apt:
-    name: postgresql-client
-    state: present
-  register: psql_install_result
-  when: inventory_hostname == 'destination_instance'
+- name: Take Postgres backup
+  shell: pg_dump {{ db_name }} | tee {{ backup_dir }}/{{ backup_file }}
+  register: pg_db_result
 
-- name: Copy PostgreSQL backup file to destination instance
+- name: Copy backup file to node2
   copy:
-    src: "{{ pg_backup_dir }}/{{ pg_backup_file }}"
-    dest: "{{pg_backup_dir}}/{{ pg_backup_file }}"
-    remote_src: yes
-  register: pg_copy_result
+    src: "{{ backup_dir }}/{{ backup_file }}"
+    dest: "{{ backup_dir }}/{{ restore_file }}"
+    remote_src: true
+    # delegate_to: "{{ groups['node1'][0] }}"
+    # when: inventory_hostname == groups['node2'][0]
 
-- name: Restore PostgreSQL backup to destination instance
-  shell: "gunzip -c {{pg_backup_dir}}/{{ pg_backup_file }} | psql -U {{ pg_username }} -h {{ ansible_host }} -d {{ pg_dest_db }}"
-  when: inventory_hostname == 'destination_instance'
+- name: Install PostgreSQL
+  become: true
+  apt:
+    name: postgresql
+    state: present
+  when: inventory_hostname in groups['node2']
+
+    #- name: Delete database
+    #become_user: postgres
+    #postgresql_db:
+    #name: "{{ db_name }}"
+    #login_user: postgres
+    #login_password: postgres
+    #state: absent
+    #when: inventory_hostname in groups['node2']
+
+- name: Create database
+  become_user: postgres
+  postgresql_db:
+    name: "{{ db_name }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password }}"
+  when: inventory_hostname in groups['node2']
+
+- name: Restore Postgres in node2
+  shell: psql -U {{ db_user }} -d {{ db_name }} -f {{ backup_dir }}/{{ restore_file }}
   register: pg_restore_result
-  vars:
-    restore_file: "{{pg_backup_dir}}/{{ pg_backup_file }}"
+  when: inventory_hostname == groups['node2'][0]
 
-- name: Display PostgreSQL restore result
+- name: PostgreSQL restore result
   debug:
     var: pg_restore_result
-  when: inventory_hostname == 'destination_instance'
+  when: inventory_hostname == groups['node2'][0]
