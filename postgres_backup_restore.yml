@@ -1,4 +1,4 @@
 - name: Postgres Backup and Restore
-- hosts: node1:node2
+  hosts: node1:node2
   roles:
     - backup_restore
