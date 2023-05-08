@@ -14,7 +14,7 @@ pipeline {
         }
         stage('Ansible Playbook Execution') {
             steps {
-                sh 'ansible-playbook -i inventory $WORKSPACE/postgres_backup_restore.yml'
+                sh 'ansible-playbook -i inventory $WORKSPACE/db_backup.yml'
             }
         }
     }
