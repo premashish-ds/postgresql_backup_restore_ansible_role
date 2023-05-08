@@ -17,6 +17,20 @@
     remote_src: true
     # delegate_to: "{{ groups['node1'][0] }}"
     # when: inventory_hostname == groups['node2'][0]
+    
+- name: Install python3-psycopg2
+  become: true
+  apt:
+    name: python3-psycopg2
+    state: present
+  when: inventory_hostname in groups['node2']
+
+- name: Install psycopg2-binary
+  become: true
+  pip:
+    name: psycopg2-binary
+    state: present
+  when: inventory_hostname in groups['node2']
 
 - name: Install PostgreSQL
   become: true
