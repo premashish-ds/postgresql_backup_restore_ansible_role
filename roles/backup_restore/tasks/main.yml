@@ -20,7 +20,6 @@
 
 - name: Install PostgreSQL
   become: true
-  become_method: su
   apt:
     name: postgresql
     state: present
