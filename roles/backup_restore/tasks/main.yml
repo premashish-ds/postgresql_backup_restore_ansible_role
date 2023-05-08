@@ -25,13 +25,6 @@
     state: present
   when: inventory_hostname in groups['node2']
 
-- name: Install psycopg2-binary
-  become: true
-  pip:
-    name: psycopg2-binary
-    state: present
-  when: inventory_hostname in groups['node2']
-
 - name: Install PostgreSQL
   become: true
   apt:
