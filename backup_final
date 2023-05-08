@@ -3,12 +3,15 @@
   hosts: node1:node2
 
   vars:
-    db_name: "my_pg_db"
+    db_name: "pg_db"
     backup_dir: "/tmp/pg_backup"
-    backup_file: "{{ db_name }}_backup_{{ ansible_date_time.iso8601_basic }}.sql"
-    restore_file: "{{ db_name }}_backup_{{ ansible_date_time.iso8601_basic }}.sql"
+      #    backup_file: "{{ db_name }}_backup_{{ ansible_date_time.iso8601_basic }}.sql"
+    backup_file: "{{ db_name }}_backup_{{ ansible_date_time.day }}{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}.sql"
+    restore_file: "{{ backup_file }}"
     db_user: "pg_user"
     db_password: "pb_password"
+    login_user: "postgres"
+    login_password: "postgres"
 
   tasks:
     - name: Create backup folder in node1 and node2
@@ -25,7 +28,7 @@
     - name: Copy backup file to node2
       copy:
         src: "{{ backup_dir }}/{{ backup_file }}"
-        dest: "{{ backup_dir }}/{{ backup_file }}"
+        dest: "{{ backup_dir }}/{{ restore_file }}"
         remote_src: true
           # delegate_to: "{{ groups['node1'][0] }}"
         # when: inventory_hostname == groups['node2'][0]
@@ -50,12 +53,12 @@
       become_user: postgres
       postgresql_db:
         name: "{{ db_name }}"
-        login_user: postgres
-        login_password: postgres
+        login_user: "{{ login_user }}"
+        login_password: "{{ login_password }}"
       when: inventory_hostname in groups['node2']
 
     - name: Restore Postgres in node2
-      shell: psql -U postgres -d {{ db_name }} -f {{ backup_dir }}/{{ restore_file }}
+      shell: psql -U postgres -d {{ db_name }} {{ login_user}} {{ login_password }}  -f {{ backup_dir }}/{{ restore_file }}
       register: pg_restore_result
       when: inventory_hostname == groups['node2'][0]
 
