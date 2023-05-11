@@ -118,7 +118,7 @@
 
     - name: Display list of tables in node1
       debug:
-        var: list_tables
+        var: list_tables.query_all_results
       when: inventory_hostname in groups['node1'][0]
 
     - name: Check number of rows in node1
@@ -133,7 +133,7 @@
 
     - name: Print row count in node1
       debug:
-        var: row_count
+        var: row_count.query_all_results
       when: inventory_hostname in groups['node1'][0]
 
     - name: List of tables in node2
@@ -148,7 +148,7 @@
 
     - name: Display list of tables in node2
       debug:
-        var: list_tables
+        var: list_tables.query_all_results
       when: inventory_hostname in groups['node2'][0]
 
     - name: Check number of rows in node2
@@ -163,5 +163,5 @@
 
     - name: Print row count in node2
       debug:
-        var: row_count
+        var: row_count.query_all_results
       when: inventory_hostname in groups['node2'][0]
