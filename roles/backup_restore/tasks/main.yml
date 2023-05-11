@@ -24,7 +24,7 @@
     - name: Copy the zip file from node1 to target machine
       #copy:
       # src: "{{ backup_dir }}/{{ backup_file }}.gz"
-      # dest: "{{ backup_dir }}/{{ zipped_backup_file }}"
+      # dest: "{{ backup_dir }}/{{ backup_file }}"
       # remote_src: true
       shell: scp "{{ backup_dir }}/{{ backup_file }}.gz" "{{ target_host }}:{{ backup_dir }}/"
       when: inventory_hostname == groups['node1'][0]
@@ -51,7 +51,7 @@
         var: md5_node2.stdout
       when: inventory_hostname in groups['node2'][0]
 
-        #- name: Compare md5sum values of node1 and node2
+     #- name: Compare md5sum values of node1 and node2
         #assert:
         #that:
         #  - md5_node1.stdout[0] == md5_node2.stdout[0]
