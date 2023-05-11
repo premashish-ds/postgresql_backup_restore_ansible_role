@@ -1,7 +1,12 @@
 ---
-db_name: "pg_db"
+db_name: "mypg_db"
 backup_dir: "/tmp/pg_backup"
-backup_file: "{{ db_name }}_backup_{{ ansible_date_time.day }}{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}.sql"
-restore_file: "{{ backup_file }}"
+#backup_file: "{{ db_name }}_backup_{{ ansible_date_time.day }}{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}.gz"
+#restore_file: "{{ backup_file }}"
+backup_file: "{{ db_name }}_backup_{{ ansible_date_time.day }}{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}"
 db_user: "postgres"
 db_password: "postgres"
+db_host: "localhost"
+table_name: "employee"
+target_host: "node2@192.168.0.105"
+
